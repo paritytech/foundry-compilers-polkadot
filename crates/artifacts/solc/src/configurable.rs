@@ -59,6 +59,8 @@ pub struct ConfigurableContractArtifact {
     /// The identifier of the source file
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<u32>,
+    #[serde(default, skip_serializing_if = "crate::ArtifactExtras::is_default")]
+    pub extensions: crate::ArtifactExtras,
 }
 
 impl ConfigurableContractArtifact {

@@ -1,7 +1,9 @@
 use std::collections::{BTreeMap, HashSet};
 
 use alloy_json_abi::JsonAbi;
-use foundry_compilers_artifacts_solc::{DevDoc, LosslessMetadata, StorageLayout, UserDoc};
+use foundry_compilers_artifacts_solc::{
+    DevDoc, LosslessMetadata, ResolcExtras, StorageLayout, UserDoc,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::ResolcEVM;
@@ -83,6 +85,10 @@ impl From<ResolcContract> for foundry_compilers_artifacts_solc::Contract {
             ewasm: None,
             ir_optimized: contract.ir_optimized,
             ir_optimized_ast: None,
+            extensions: foundry_compilers_artifacts_solc::ArtifactExtras::Resolc(ResolcExtras {
+                hash: contract.hash,
+                factory_dependencies: contract.factory_dependencies,
+            }),
         }
     }
 }

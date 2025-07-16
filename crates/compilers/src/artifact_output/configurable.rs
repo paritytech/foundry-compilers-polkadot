@@ -107,6 +107,7 @@ impl ConfigurableArtifacts {
             generated_sources,
             source_map,
             opcodes,
+            extensions: _,
             __non_exhaustive,
         } = self.additional_values;
 
@@ -230,6 +231,7 @@ impl ArtifactOutput for ConfigurableArtifacts {
             ewasm,
             ir_optimized,
             ir_optimized_ast,
+            extensions,
         } = contract;
 
         if self.additional_values.metadata {
@@ -325,6 +327,7 @@ impl ArtifactOutput for ConfigurableArtifacts {
             id: source_file.as_ref().map(|s| s.id),
             ast: source_file.and_then(|s| s.ast.clone()),
             generated_sources: generated_sources.unwrap_or_default(),
+            extensions,
         }
     }
 
@@ -455,6 +458,7 @@ pub struct ExtraOutputValues {
     pub generated_sources: bool,
     pub source_map: bool,
     pub opcodes: bool,
+    pub extensions: bool,
 
     /// PRIVATE: This structure may grow, As such, constructing this structure should
     /// _always_ be done using a public constructor or update syntax:
@@ -490,6 +494,7 @@ impl ExtraOutputValues {
             generated_sources: true,
             source_map: true,
             opcodes: true,
+            extensions: true,
             __non_exhaustive: (),
         }
     }

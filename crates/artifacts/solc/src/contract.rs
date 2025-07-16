@@ -44,6 +44,8 @@ pub struct Contract {
     pub ir_optimized: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ir_optimized_ast: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "crate::ArtifactExtras::is_default")]
+    pub extensions: crate::ArtifactExtras,
 }
 
 impl<'a> From<&'a Contract> for CompactContractBytecodeCow<'a> {
