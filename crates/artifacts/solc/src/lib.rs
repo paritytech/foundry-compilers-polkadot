@@ -1864,13 +1864,13 @@ pub enum ArtifactExtras {
 
 impl ArtifactExtras {
     fn is_default(&self) -> bool {
-        *self == ArtifactExtras::None
+        *self == Self::None
     }
 
     pub fn resolc_extras(&self) -> Option<ResolcExtras> {
         match self {
-            ArtifactExtras::None => None,
-            ArtifactExtras::Resolc(resolc_extras) => Some(resolc_extras.clone()),
+            Self::None => None,
+            Self::Resolc(resolc_extras) => Some(resolc_extras.clone()),
         }
     }
 }

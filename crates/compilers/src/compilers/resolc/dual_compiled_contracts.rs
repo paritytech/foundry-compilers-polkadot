@@ -146,7 +146,7 @@ impl DualCompiledContracts {
         for (_, resolc_artifact) in resolc_output.artifacts() {
             if let (Some(hash), Some(bytecode)) = (
                 &resolc_artifact.extensions.resolc_extras().and_then(|x| x.hash),
-                &resolc_artifact.bytecode.clone().map(|x| x.object.clone()),
+                &resolc_artifact.bytecode.clone().map(|x| x.object),
             ) {
                 // NOTE(zk): unlinked objects are _still_ encoded as valid hex
                 // but the hash wouldn't be present
@@ -288,14 +288,14 @@ impl DualCompiledContracts {
                 if resolc.resolc_deployed_bytecode.bytes_len() >= evm.evm_bytecode.bytes_len() {
                     Some(FindBytecodeResult {
                         r#type: ContractType::Resolc,
-                        contract: &resolc,
+                        contract: resolc,
                         init_code,
-                        info: &resolc_info,
+                        info: resolc_info,
                     })
                 } else {
                     Some(FindBytecodeResult {
                         r#type: ContractType::EVM,
-                        contract: &resolc,
+                        contract: resolc,
                         init_code,
                         info: evm_info,
                     })
@@ -339,7 +339,7 @@ impl DualCompiledContracts {
                         // check that the nested dependency is inserted
                         if !visited.contains(&nested_dep_vec) {
                             // if not, add it to queue for processing
-                            queue.push_back(&nested_dep);
+                            queue.push_back(nested_dep);
                         }
                     }
                 }
