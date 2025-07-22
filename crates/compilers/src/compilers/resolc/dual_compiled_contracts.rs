@@ -92,7 +92,7 @@ pub struct DualCompiledContracts {
 }
 
 impl DualCompiledContracts {
-    /// Creates a collection of `[DualCompiledContract]`s from the provided solc and zksolc output.
+    /// Creates a collection of `[DualCompiledContract]`s from the provided solc and resolc output.
     pub fn new(
         output: &ProjectCompileOutput,
         resolc_output: &ProjectCompileOutput,
@@ -140,7 +140,7 @@ impl DualCompiledContracts {
         }
 
         // DualCompiledContracts uses a vec of bytecodes as factory deps field vs
-        // the <hash, name> map zksolc outputs, hence we need all bytecodes upfront to
+        // the <hash, name> map resolc outputs, hence we need all bytecodes upfront to
         // then do the conversion
         let mut resolc_all_bytecodes: HashMap<String, BytecodeObject> = Default::default();
         for (_, resolc_artifact) in resolc_output.artifacts() {
@@ -148,8 +148,6 @@ impl DualCompiledContracts {
                 &resolc_artifact.extensions.resolc_extras().and_then(|x| x.hash),
                 &resolc_artifact.bytecode.clone().map(|x| x.object),
             ) {
-                // NOTE(zk): unlinked objects are _still_ encoded as valid hex
-                // but the hash wouldn't be present
                 let bytes = bytecode.clone();
                 resolc_all_bytecodes.insert(hash.clone(), bytes);
             }
@@ -280,10 +278,10 @@ impl DualCompiledContracts {
         init_code: &'b [u8],
     ) -> Option<FindBytecodeResult<'b>> {
         let evm = self.find_by_evm_bytecode(init_code).map(|evm| (ContractType::EVM, evm));
-        let zk =
+        let resolc =
             self.find_by_resolc_deployed_bytecode(init_code).map(|evm| (ContractType::Resolc, evm));
 
-        match (&evm, &zk) {
+        match (&evm, &resolc) {
             (Some((_, (evm_info, evm))), Some((_, (resolc_info, resolc)))) => {
                 if resolc.resolc_deployed_bytecode.bytes_len() >= evm.evm_bytecode.bytes_len() {
                     Some(FindBytecodeResult {
@@ -301,7 +299,7 @@ impl DualCompiledContracts {
                     })
                 }
             }
-            _ => evm.or(zk).map(|(r#type, (info, contract))| FindBytecodeResult {
+            _ => evm.or(resolc).map(|(r#type, (info, contract))| FindBytecodeResult {
                 r#type,
                 info,
                 contract,
