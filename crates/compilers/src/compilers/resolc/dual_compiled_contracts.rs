@@ -1,4 +1,7 @@
-//! ZKSolc module.
+//! dual compilation module
+//!
+//! Implementation is a copy and paste with slight modification of
+//! https://github.com/matter-labs/foundry-zksync/blob/b5b7ac181b6a4cf852d333bb5b747cc880a74583/crates/zksync/compilers/src/dual_compiled_contracts.rs
 use std::{
     collections::{BTreeMap, HashMap, HashSet, VecDeque},
     path::PathBuf,
