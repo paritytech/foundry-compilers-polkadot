@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.1](https://github.com/foundry-rs/compilers/releases/tag/v0.14.1) - 2025-04-19
+
+### Bug Fixes
+
+- Fix Update CONTRIBUTING.md ([#261](https://github.com/foundry-rs/compilers/issues/261))
+
+### Miscellaneous Tasks
+
+- Release 0.14.1
+
+### Performance
+
+- Switch md5 to xxhash ([#262](https://github.com/foundry-rs/compilers/issues/262))
+
 ## [0.14.0](https://github.com/foundry-rs/compilers/releases/tag/v0.14.0) - 2025-04-07
 
 ### Features
@@ -13,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Miscellaneous Tasks
 
+- Release 0.14.0
 - Simplify pragma parsing ([#260](https://github.com/foundry-rs/compilers/issues/260))
 
 ### Styling

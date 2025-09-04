@@ -1126,7 +1126,7 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
@@ -1142,7 +1142,6 @@ dependencies = [
  "futures-util",
  "home",
  "itertools 0.14.0",
- "md-5",
  "path-slash",
  "rand 0.8.5",
  "rayon",
@@ -1173,7 +1172,7 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers-artifacts"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "foundry-compilers-artifacts-resolc",
  "foundry-compilers-artifacts-solc",
@@ -1182,14 +1181,13 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers-artifacts-resolc"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
  "foundry-compilers-artifacts-solc",
  "foundry-compilers-core",
  "futures-util",
- "md-5",
  "path-slash",
  "rayon",
  "semver 1.0.26",
@@ -1206,13 +1204,12 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers-artifacts-solc"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
  "foundry-compilers-core",
  "futures-util",
- "md-5",
  "path-slash",
  "rayon",
  "semver 1.0.26",
@@ -1230,7 +1227,7 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers-artifacts-vyper"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "alloy-json-abi",
  "alloy-primitives",
@@ -1246,7 +1243,7 @@ dependencies = [
 
 [[package]]
 name = "foundry-compilers-core"
-version = "0.14.0"
+version = "0.14.1"
 dependencies = [
  "alloy-primitives",
  "cfg-if",
@@ -1262,6 +1259,7 @@ dependencies = [
  "thiserror 2.0.12",
  "tokio",
  "walkdir",
+ "xxhash-rust",
 ]
 
 [[package]]
@@ -1982,16 +1980,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8263075bb86c5a1b1427b5ae862e8889656f126e9f77c484496e8b47cf5c5558"
 dependencies = [
  "regex-automata 0.1.10",
-]
-
-[[package]]
-name = "md-5"
-version = "0.10.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d89e7ee0cfbedfc4da3340218492196241d89eefb6dab27de5df917a6d2e78cf"
-dependencies = [
- "cfg-if",
- "digest 0.10.7",
 ]
 
 [[package]]
@@ -4374,6 +4362,12 @@ dependencies = [
  "libc",
  "rustix",
 ]
+
+[[package]]
+name = "xxhash-rust"
+version = "0.8.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fdd20c5420375476fbd4394763288da7eb0cc0b8c11deed431a91562af7335d3"
 
 [[package]]
 name = "xz2"
