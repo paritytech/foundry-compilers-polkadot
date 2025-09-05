@@ -925,7 +925,7 @@ pub(crate) fn parse_one_source<R>(
     f: impl FnOnce(solar_sema::ast::SourceUnit<'_>) -> R,
 ) -> Result<R, EmittedDiagnostics> {
     let sess = Session::builder().with_buffer_emitter(Default::default()).build();
-    let res = sess.enter(|| -> solar_parse::interface::Result<_> {
+    let res = sess.enter_sequential(|| -> solar_parse::interface::Result<_> {
         let arena = solar_parse::ast::Arena::new();
         let filename = FileName::Real(path.to_path_buf());
         let mut parser = Parser::from_source_code(&sess, &arena, filename, content.to_string())?;
