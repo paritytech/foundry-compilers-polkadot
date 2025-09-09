@@ -97,12 +97,13 @@ impl<L: Language> RawBuildInfo<L> {
         let input_version = input.version().clone();
         let build_context = BuildContext::new(input, output)?;
 
-        let solc_short = format!("{}.{}.{}", version.major, version.minor, version.patch);
+        let input_version_short =
+            format!("{}.{}.{}", input_version.major, input_version.minor, input_version.patch);
         let input = serde_json::to_value(input)?;
         let id = utils::unique_hash_many([
             ETHERS_FORMAT_VERSION,
-            &version.to_string(),
-            compiler_version.to_string(),
+            &input_version.to_string(),
+            &compiler_version.to_string(),
             &serde_json::to_string(&input)?,
         ]);
 

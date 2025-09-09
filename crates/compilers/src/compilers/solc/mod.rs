@@ -7,7 +7,7 @@ use crate::{
         parse::{SolData, SolParser},
         Node,
     },
-    SourceParser,
+    CompilationError, SourceParser,
 };
 use foundry_compilers_artifacts::{
     error::SourceLocation,

@@ -1,6 +1,6 @@
 use crate::{
     error::{Result, SolcError},
-    resolver::parse::SolData,
+    resolver::parse::SolParser,
     solc::{Solc, SolcCompiler, SolcSettings},
     Compiler, CompilerVersion, SimpleCompilerName,
 };
@@ -30,7 +30,7 @@ impl Compiler for Resolc {
     type CompilerContract = Contract;
     type Input = ResolcVersionedInput;
     type CompilationError = Error;
-    type ParsedSource = SolData;
+    type Parser = SolParser;
     type Settings = SolcSettings;
     type Language = SolcLanguage;
 

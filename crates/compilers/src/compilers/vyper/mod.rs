@@ -1,7 +1,7 @@
 use self::input::VyperVersionedInput;
 use super::{Compiler, CompilerOutput, Language};
 pub use crate::artifacts::vyper::{VyperCompilationError, VyperInput, VyperOutput, VyperSettings};
-use crate::parser::VyperParser;
+use crate::{parser::VyperParser, CompilerInput, SimpleCompilerName};
 use core::fmt;
 use foundry_compilers_artifacts::{sources::Source, Contract};
 use foundry_compilers_core::error::{Result, SolcError};
