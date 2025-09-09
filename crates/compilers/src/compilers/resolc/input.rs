@@ -144,6 +144,11 @@ impl CompilerInput for ResolcVersionedInput {
             extra_settings: settings.extra_settings,
         };
 
+        // Resolc supports EVM versions up to Cancun
+        if settings.settings.evm_version.is_some_and(|v| v > EvmVersion::Cancun) {
+            settings.settings.evm_version = Some(EvmVersion::Cancun);
+        }
+
         settings.update_output_selection(|selection| {
             for (_, key) in selection.0.iter_mut() {
                 for (_, value) in key.iter_mut() {
