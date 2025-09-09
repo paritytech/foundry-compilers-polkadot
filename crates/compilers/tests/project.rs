@@ -5,17 +5,14 @@ use foundry_compilers::{
     buildinfo::BuildInfo,
     cache::{CompilerCache, SOLIDITY_FILES_CACHE_FILENAME},
     compilers::{
-        multi::{
-            MultiCompiler, MultiCompilerLanguage, MultiCompilerParsedSource, MultiCompilerSettings,
-        },
-        resolc::Resolc,
+        multi::{MultiCompiler, MultiCompilerLanguage, MultiCompilerSettings},
         solc::{Solc, SolcCompiler, SolcLanguage},
         vyper::{Vyper, VyperLanguage, VyperSettings},
         CompilerOutput,
     },
     flatten::Flattener,
     info::ContractInfo,
-    multi::{MultiCompilerInput, MultiCompilerRestrictions, SolidityCompiler},
+    multi::{MultiCompilerInput, MultiCompilerParser, MultiCompilerRestrictions},
     project::{Preprocessor, ProjectCompiler},
     project_util::*,
     solc::{Restriction, SolcRestrictions, SolcSettings},
@@ -62,7 +59,7 @@ pub static VYPER: LazyLock<Vyper> = LazyLock::new(|| {
             return Vyper::new(&path).unwrap();
         }
 
-        let base = "https://github.com/vyperlang/vyper/releases/download/v0.4.0/vyper.0.4.0+commit.e9db8d9f";
+        let base = "https://github.com/vyperlang/vyper/releases/download/v0.4.3/vyper.0.4.3+commit.bff19ea2";
         let url = format!(
             "{base}.{}",
             match platform() {
@@ -341,7 +338,7 @@ fn can_compile_dapp_detect_changes_in_libs(#[case] compiler: MultiCompiler) {
         )
         .unwrap();
 
-    let graph = Graph::<MultiCompilerParsedSource>::resolve(project.paths()).unwrap();
+    let graph = Graph::<MultiCompilerParser>::resolve(project.paths()).unwrap();
     assert_eq!(graph.files().len(), 2);
     assert_eq!(graph.files().clone(), HashMap::from([(src, 0), (lib, 1),]));
 
@@ -371,7 +368,7 @@ fn can_compile_dapp_detect_changes_in_libs(#[case] compiler: MultiCompiler) {
         )
         .unwrap();
 
-    let graph = Graph::<MultiCompilerParsedSource>::resolve(project.paths()).unwrap();
+    let graph = Graph::<MultiCompilerParser>::resolve(project.paths()).unwrap();
     assert_eq!(graph.files().len(), 2);
 
     let compiled = project.compile().unwrap();
@@ -416,7 +413,7 @@ fn can_compile_dapp_detect_changes_in_sources(#[case] compiler: MultiCompiler) {
         )
         .unwrap();
 
-    let graph = Graph::<MultiCompilerParsedSource>::resolve(project.paths()).unwrap();
+    let graph = Graph::<MultiCompilerParser>::resolve(project.paths()).unwrap();
     assert_eq!(graph.files().len(), 2);
     assert_eq!(graph.files().clone(), HashMap::from([(base, 0), (src, 1),]));
     assert_eq!(graph.imported_nodes(1).to_vec(), vec![0]);
@@ -453,7 +450,7 @@ fn can_compile_dapp_detect_changes_in_sources(#[case] compiler: MultiCompiler) {
    ",
         )
         .unwrap();
-    let graph = Graph::<MultiCompilerParsedSource>::resolve(project.paths()).unwrap();
+    let graph = Graph::<MultiCompilerParser>::resolve(project.paths()).unwrap();
     assert_eq!(graph.files().len(), 2);
 
     let compiled = project.compile().unwrap();
@@ -873,7 +870,6 @@ contract Contract {
         .unwrap();
 
     let result = project.paths().clone().with_language::<SolcLanguage>().flatten(target.as_path());
-    assert!(result.is_err());
     println!("{}", result.unwrap_err());
 }
 
@@ -2888,7 +2884,7 @@ fn can_create_standard_json_input_with_external_file() {
         ]
     );
 
-    let solc = Solc::find_or_install(&Version::new(0, 8, 24)).unwrap();
+    let solc = Solc::find_or_install(&Version::new(0, 8, 27)).unwrap();
 
     // can compile using the created json
     let compiler_errors = solc
@@ -2917,7 +2913,7 @@ fn can_compile_std_json_input(#[case] compiler: MultiCompiler) {
     assert!(input.sources.contains_key(Path::new("lib/ds-test/src/test.sol")));
 
     // should be installed
-    if let Ok(solc) = Solc::find_or_install(&Version::new(0, 8, 24)) {
+    if let Ok(solc) = Solc::find_or_install(&Version::new(0, 8, 28)) {
         let out = solc.compile(&input).unwrap();
         assert!(out.errors.is_empty());
         assert!(out.sources.contains_key(Path::new("lib/ds-test/src/test.sol")));
@@ -2986,7 +2982,7 @@ fn can_create_standard_json_input_with_symlink(#[case] compiler: MultiCompiler) 
         ]
     );
 
-    let solc = Solc::find_or_install(&Version::new(0, 8, 24)).unwrap();
+    let solc = Solc::find_or_install(&Version::new(0, 8, 28)).unwrap();
 
     // can compile using the created json
     let compiler_errors = solc
@@ -3185,7 +3181,7 @@ async fn can_install_solc_and_compile_std_json_input_async() {
     tmp.assert_no_errors();
     let source = tmp.list_source_files().into_iter().find(|p| p.ends_with("Dapp.t.sol")).unwrap();
     let input = tmp.project().standard_json_input(&source).unwrap();
-    let solc = Solc::find_or_install(&Version::new(0, 8, 24)).unwrap();
+    let solc = Solc::find_or_install(&Version::new(0, 8, 27)).unwrap();
 
     assert!(input.settings.remappings.contains(&"ds-test/=lib/ds-test/src/".parse().unwrap()));
     let input: SolcInput = input.into();
@@ -3965,7 +3961,7 @@ fn can_add_basic_contract_and_library(#[case] compiler: MultiCompiler) {
 
     let lib = project.add_basic_source("Bar", "^0.8.0").unwrap();
 
-    let graph = Graph::<MultiCompilerParsedSource>::resolve(project.paths()).unwrap();
+    let graph = Graph::<MultiCompilerParser>::resolve(project.paths()).unwrap();
     assert_eq!(graph.files().len(), 2);
     assert!(graph.files().contains_key(&src));
     assert!(graph.files().contains_key(&lib));

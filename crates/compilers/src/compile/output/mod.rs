@@ -19,6 +19,7 @@ use crate::{
     compilers::{
         multi::MultiCompiler, CompilationError, Compiler, CompilerContract, CompilerOutput,
     },
+    resolver::GraphEdges,
     Artifact, ArtifactId, ArtifactOutput, Artifacts, ConfigurableArtifacts,
 };
 
@@ -62,7 +63,7 @@ impl<L> IntoIterator for Builds<L> {
 
 /// Contains a mixture of already compiled/cached artifacts and the input set of sources that still
 /// need to be compiled.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default)]
 pub struct ProjectCompileOutput<
     C: Compiler = MultiCompiler,
     T: ArtifactOutput<CompilerContract = C::CompilerContract> = ConfigurableArtifacts,
@@ -81,12 +82,25 @@ pub struct ProjectCompileOutput<
     pub(crate) compiler_severity_filter: Severity,
     /// all build infos that were just compiled
     pub(crate) builds: Builds<C::Language>,
+    /// The relationship between the source files and their imports
+    pub(crate) edges: GraphEdges<C::Parser>,
 }
 
 impl<T: ArtifactOutput<CompilerContract = C::CompilerContract>, C: Compiler>
     ProjectCompileOutput<C, T>
 {
+    /// Returns the parser used to parse the sources.
+    pub fn parser(&self) -> &C::Parser {
+        self.edges.parser()
+    }
+
+    /// Returns the parser used to parse the sources.
+    pub fn parser_mut(&mut self) -> &mut C::Parser {
+        self.edges.parser_mut()
+    }
+
     /// Converts all `\\` separators in _all_ paths to `/`
+    #[instrument(skip_all)]
     pub fn slash_paths(&mut self) {
         self.compiler_output.slash_paths();
         self.compiled_artifacts.slash_paths();
@@ -459,6 +473,11 @@ impl<T: ArtifactOutput<CompilerContract = C::CompilerContract>, C: Compiler>
     pub fn builds(&self) -> impl Iterator<Item = (&String, &BuildContext<C::Language>)> {
         self.builds.iter()
     }
+
+    /// Returns the source graph of the project.
+    pub fn graph(&self) -> &GraphEdges<C::Parser> {
+        &self.edges
+    }
 }
 
 impl<C: Compiler, T: ArtifactOutput<CompilerContract = C::CompilerContract>>
@@ -607,8 +626,7 @@ impl<C: Compiler> AggregatedCompilerOutput<C> {
     ///
     /// There can be multiple `BuildInfo`, since we support multiple versions.
     ///
-    /// The created files have the md5 hash `{_format,solcVersion,solcLongVersion,input}` as their
-    /// file name
+    /// The created files have a unique identifier as their name.
     pub fn write_build_infos(&self, build_info_dir: &Path) -> Result<(), SolcError> {
         if self.build_infos.is_empty() {
             return Ok(());
