@@ -278,9 +278,7 @@ impl DualCompiledContracts {
         &self,
         code_hash: String,
     ) -> Option<(&ContractInfo, &DualCompiledContract)> {
-        let hash_bytes = hex::decode(&code_hash).ok().map(|bytes| B256::from_slice(&bytes));
-
-        hash_bytes.and_then(|hash| {
+        hex::decode(&code_hash).ok().map(|bytes| B256::from_slice(&bytes)).and_then(|hash| {
             self.contracts.iter().find(|(_, contract)| hash == contract.evm_bytecode_hash)
         })
     }
