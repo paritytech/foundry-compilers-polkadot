@@ -9,7 +9,7 @@ use std::{
 
 use crate::{info::ContractInfo, Artifact, ArtifactId, ProjectCompileOutput, ProjectPathsConfig};
 
-use alloy_primitives::{keccak256, B256};
+use alloy_primitives::{hex, keccak256, B256};
 use foundry_compilers_artifacts::{solc::Offsets, BytecodeObject};
 use tracing::debug;
 
@@ -265,12 +265,22 @@ impl DualCompiledContracts {
         })
     }
 
-    /// Finds a contract matching the ZK bytecode hash
+    /// Finds a contract matching the Resolc bytecode hash
     pub fn find_by_resolc_bytecode_hash(
         &self,
         code_hash: String,
     ) -> Option<(&ContractInfo, &DualCompiledContract)> {
         self.contracts.iter().find(|(_, contract)| code_hash == contract.resolc_bytecode_hash)
+    }
+
+    /// Finds a contract matching the EVM bytecode hash
+    pub fn find_by_evm_bytecode_hash(
+        &self,
+        code_hash: String,
+    ) -> Option<(&ContractInfo, &DualCompiledContract)> {
+        hex::decode(&code_hash).ok().map(|bytes| B256::from_slice(&bytes)).and_then(|hash| {
+            self.contracts.iter().find(|(_, contract)| hash == contract.evm_bytecode_hash)
+        })
     }
 
     /// Find a contract matching the given bytecode, whether it's EVM or ZK.
