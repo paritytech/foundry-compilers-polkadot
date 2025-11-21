@@ -106,8 +106,13 @@ impl DualCompiledContracts {
     ) -> Self {
         let mut dual_compiled_contracts = HashMap::new();
         let mut solc_bytecodes = HashMap::new();
-
+        let mut storage_slots = vec![];
         let output_artifacts = output.artifact_ids().map(|(id, artifact)| {
+            storage_slots = artifact
+                .storage_layout
+                .as_ref()
+                .map(|layout| layout.storage.iter().map(|item| item.slot.clone()).collect())
+                .unwrap_or_default();
             (
                 ContractInfo {
                     name: id.name,
@@ -194,13 +199,7 @@ impl DualCompiledContracts {
                             evm_bytecode: solc_bytecode.clone(),
                             evm_immutable_references: immutable_references.clone(),
                             evm_deployed_bytecode: solc_deployed_bytecode.clone(),
-                            storage_slots: artifact
-                                .storage_layout
-                                .as_ref()
-                                .map(|layout| {
-                                    layout.storage.iter().map(|item| item.slot.clone()).collect()
-                                })
-                                .unwrap_or_default(),
+                            storage_slots,
                         },
                     );
                 } else {
