@@ -145,7 +145,11 @@ impl DualCompiledContracts {
                                 .storage_layout
                                 .as_ref()
                                 .map(|layout| {
-                                    layout.storage.iter().map(|item| item.slot.clone()).collect()
+                                    layout
+                                        .storage
+                                        .iter()
+                                        .map(|item| item.slot.clone())
+                                        .collect::<Vec<String>>()
                                 })
                                 .unwrap_or_default(),
                         ),
