@@ -41,6 +41,8 @@ pub struct DualCompiledContract {
     pub evm_deployed_bytecode: BytecodeObject,
     /// Immutable references with solc
     pub evm_immutable_references: Option<BTreeMap<String, Vec<Offsets>>>,
+    /// Storage slots
+    pub storage_slots: Vec<String>,
 }
 
 /// Indicates the type of match from a `find` search
@@ -104,7 +106,6 @@ impl DualCompiledContracts {
     ) -> Self {
         let mut dual_compiled_contracts = HashMap::new();
         let mut solc_bytecodes = HashMap::new();
-
         let output_artifacts = output.artifact_ids().map(|(id, artifact)| {
             (
                 ContractInfo {
@@ -136,7 +137,22 @@ impl DualCompiledContracts {
                 if let Some(deployed_bytecode) = deployed_bytecode {
                     solc_bytecodes.insert(
                         contract_info,
-                        (bytecode, deployed_bytecode.clone(), immutable_references),
+                        (
+                            bytecode,
+                            deployed_bytecode.clone(),
+                            immutable_references,
+                            artifact
+                                .storage_layout
+                                .as_ref()
+                                .map(|layout| {
+                                    layout
+                                        .storage
+                                        .iter()
+                                        .map(|item| item.slot.clone())
+                                        .collect::<Vec<String>>()
+                                })
+                                .unwrap_or_default(),
+                        ),
                     );
                 }
             }
@@ -165,8 +181,12 @@ impl DualCompiledContracts {
             if let (Some(bytecode), Some(hash), Some(factory_deps_map)) =
                 (maybe_bytecode, maybe_hash, maybe_factory_deps)
             {
-                if let Some((solc_bytecode, solc_deployed_bytecode, immutable_references)) =
-                    solc_bytecodes.get(&contract_info)
+                if let Some((
+                    solc_bytecode,
+                    solc_deployed_bytecode,
+                    immutable_references,
+                    storage_slots,
+                )) = solc_bytecodes.get(&contract_info)
                 {
                     let bytecode_vec = bytecode.object.clone();
                     let mut factory_deps_vec: Vec<BytecodeObject> = factory_deps_map
@@ -192,6 +212,7 @@ impl DualCompiledContracts {
                             evm_bytecode: solc_bytecode.clone(),
                             evm_immutable_references: immutable_references.clone(),
                             evm_deployed_bytecode: solc_deployed_bytecode.clone(),
+                            storage_slots: storage_slots.to_owned(),
                         },
                     );
                 } else {
@@ -506,6 +527,7 @@ mod tests {
             evm_deployed_bytecode: BytecodeObject::Bytecode(evm_empty_bytes.clone().into()),
             evm_immutable_references: None,
             evm_bytecode: BytecodeObject::Bytecode(evm_empty_bytes.into()),
+            storage_slots: vec![],
         };
 
         let infos = [
