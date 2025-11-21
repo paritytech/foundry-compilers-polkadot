@@ -106,13 +106,7 @@ impl DualCompiledContracts {
     ) -> Self {
         let mut dual_compiled_contracts = HashMap::new();
         let mut solc_bytecodes = HashMap::new();
-        let mut storage_slots = vec![];
         let output_artifacts = output.artifact_ids().map(|(id, artifact)| {
-            storage_slots = artifact
-                .storage_layout
-                .as_ref()
-                .map(|layout| layout.storage.iter().map(|item| item.slot.clone()).collect())
-                .unwrap_or_default();
             (
                 ContractInfo {
                     name: id.name,
@@ -143,7 +137,18 @@ impl DualCompiledContracts {
                 if let Some(deployed_bytecode) = deployed_bytecode {
                     solc_bytecodes.insert(
                         contract_info,
-                        (bytecode, deployed_bytecode.clone(), immutable_references),
+                        (
+                            bytecode,
+                            deployed_bytecode.clone(),
+                            immutable_references,
+                            artifact
+                                .storage_layout
+                                .as_ref()
+                                .map(|layout| {
+                                    layout.storage.iter().map(|item| item.slot.clone()).collect()
+                                })
+                                .unwrap_or_default(),
+                        ),
                     );
                 }
             }
@@ -172,8 +177,12 @@ impl DualCompiledContracts {
             if let (Some(bytecode), Some(hash), Some(factory_deps_map)) =
                 (maybe_bytecode, maybe_hash, maybe_factory_deps)
             {
-                if let Some((solc_bytecode, solc_deployed_bytecode, immutable_references)) =
-                    solc_bytecodes.get(&contract_info)
+                if let Some((
+                    solc_bytecode,
+                    solc_deployed_bytecode,
+                    immutable_references,
+                    storage_slots,
+                )) = solc_bytecodes.get(&contract_info)
                 {
                     let bytecode_vec = bytecode.object.clone();
                     let mut factory_deps_vec: Vec<BytecodeObject> = factory_deps_map
