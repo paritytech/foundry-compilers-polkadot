@@ -41,6 +41,8 @@ pub struct DualCompiledContract {
     pub evm_deployed_bytecode: BytecodeObject,
     /// Immutable references with solc
     pub evm_immutable_references: Option<BTreeMap<String, Vec<Offsets>>>,
+    /// Storage slots
+    pub storage_slots: Vec<String>,
 }
 
 /// Indicates the type of match from a `find` search
@@ -192,6 +194,13 @@ impl DualCompiledContracts {
                             evm_bytecode: solc_bytecode.clone(),
                             evm_immutable_references: immutable_references.clone(),
                             evm_deployed_bytecode: solc_deployed_bytecode.clone(),
+                            storage_slots: artifact
+                                .storage_layout
+                                .as_ref()
+                                .map(|layout| {
+                                    layout.storage.iter().map(|item| item.slot.clone()).collect()
+                                })
+                                .unwrap_or_default(),
                         },
                     );
                 } else {
@@ -506,6 +515,7 @@ mod tests {
             evm_deployed_bytecode: BytecodeObject::Bytecode(evm_empty_bytes.clone().into()),
             evm_immutable_references: None,
             evm_bytecode: BytecodeObject::Bytecode(evm_empty_bytes.into()),
+            storage_slots: vec![],
         };
 
         let infos = [
