@@ -208,7 +208,7 @@ impl DualCompiledContracts {
                             evm_bytecode: solc_bytecode.clone(),
                             evm_immutable_references: immutable_references.clone(),
                             evm_deployed_bytecode: solc_deployed_bytecode.clone(),
-                            storage_slots,
+                            storage_slots: storage_slots.to_owned(),
                         },
                     );
                 } else {
