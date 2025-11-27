@@ -216,7 +216,7 @@ impl DualCompiledContracts {
                         },
                     );
                 } else {
-                    tracing::error!("matching solc artifact not found for {contract_info:?}");
+                    tracing::debug!("matching solc artifact not found for {contract_info:?}");
                 }
             }
         }
