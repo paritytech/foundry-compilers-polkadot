@@ -1,4 +1,4 @@
-use foundry_compilers_core::error::SolcIoError;
+use foundry_compilers_core::error::{SolcError, SolcIoError};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -20,6 +20,14 @@ impl Sources {
     /// Returns a new instance of [Sources].
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Joins all paths relative to `root`.
+    pub fn make_absolute(&mut self, root: &Path) {
+        self.0 = std::mem::take(&mut self.0)
+            .into_iter()
+            .map(|(path, source)| (root.join(path), source))
+            .collect();
     }
 
     /// Returns `true` if no sources should have optimized output selection.
@@ -137,6 +145,30 @@ impl Source {
         Ok(Self::new(content))
     }
 
+    /// [`read`](Self::read) + mapping error to [`SolcError`].
+    pub fn read_(file: &Path) -> Result<Self, SolcError> {
+        Self::read(file).map_err(|err| {
+            let exists = err.path().exists();
+            if !exists && err.path().is_symlink() {
+                return SolcError::ResolveBadSymlink(err);
+            }
+
+            // This is an additional check useful on OS that have case-sensitive paths,
+            // see also <https://docs.soliditylang.org/en/v0.8.17/path-resolution.html#import-callback>
+            // check if there exists a file with different case
+            #[cfg(feature = "walkdir")]
+            if !exists {
+                if let Some(existing_file) =
+                    foundry_compilers_core::utils::find_case_sensitive_existing_file(file)
+                {
+                    return SolcError::ResolveCaseSensitiveFileName { error: err, existing_file };
+                }
+            }
+
+            SolcError::Resolve(err)
+        })
+    }
+
     /// Returns `true` if the source should be compiled with full output selection.
     pub fn is_dirty(&self) -> bool {
         self.kind.is_dirty()
@@ -145,7 +177,7 @@ impl Source {
     /// Recursively finds all source files under the given dir path and reads them all
     #[cfg(feature = "walkdir")]
     pub fn read_all_from(dir: &Path, extensions: &[&str]) -> Result<Sources, SolcIoError> {
-        Self::read_all_files(utils::source_files(dir, extensions))
+        Self::read_all(utils::source_files_iter(dir, extensions))
     }
 
     /// Recursively finds all solidity and yul files under the given dir path and reads them all
@@ -154,14 +186,12 @@ impl Source {
         Self::read_all_from(dir, utils::SOLC_EXTENSIONS)
     }
 
-    /// Reads all source files of the given vec
-    ///
-    /// Depending on the len of the vec it will try to read the files in parallel
+    /// Reads all source files of the given list.
     pub fn read_all_files(files: Vec<PathBuf>) -> Result<Sources, SolcIoError> {
         Self::read_all(files)
     }
 
-    /// Reads all files
+    /// Reads all of the given files.
     #[instrument(name = "Source::read_all", skip_all)]
     pub fn read_all<T, I>(files: I) -> Result<Sources, SolcIoError>
     where

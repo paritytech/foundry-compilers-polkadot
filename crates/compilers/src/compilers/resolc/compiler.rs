@@ -1,6 +1,6 @@
 use crate::{
     error::{Result, SolcError},
-    resolver::parse::SolData,
+    resolver::parse::SolParser,
     solc::{Solc, SolcCompiler, SolcSettings},
     Compiler, CompilerVersion, SimpleCompilerName,
 };
@@ -30,9 +30,9 @@ impl Compiler for Resolc {
     type CompilerContract = Contract;
     type Input = ResolcVersionedInput;
     type CompilationError = Error;
-    type ParsedSource = SolData;
     type Settings = SolcSettings;
     type Language = SolcLanguage;
+    type Parser = SolParser;
 
     fn compiler_version(&self, _input: &Self::Input) -> Version {
         self.resolc_version.clone()
