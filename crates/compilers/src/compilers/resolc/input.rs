@@ -21,6 +21,7 @@ pub struct ResolcOptimizer {
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PolkaVM {
     #[serde(default)]
     pub memory_config: MemoryConfig,
@@ -28,6 +29,7 @@ pub struct PolkaVM {
     pub debug_information: bool,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MemoryConfig {
     #[serde(default)]
     pub heap_size: u32,
