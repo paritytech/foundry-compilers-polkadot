@@ -158,21 +158,18 @@ mod tests {
             .contains_key("revive_version"));
 
         // With revive_version
-        let contract = make_contract(Some(make_solc_metadata("0.8.19", Some("0.1.0-dev.13"))));
+        let contract = make_contract(Some(make_solc_metadata("0.8.19", Some("0.6.0"))));
         let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
         let meta = solc_contract.metadata.unwrap();
 
         assert_eq!(meta.metadata.compiler.version, "0.8.19");
-        assert_eq!(
-            meta.metadata.compiler.additional_information["revive_version"],
-            json!("0.1.0-dev.13")
-        );
+        assert_eq!(meta.metadata.compiler.additional_information["revive_version"], json!("0.6.0"));
     }
 
     #[test]
     fn conversion_with_different_compiler_versions() {
-        let contract1 = make_contract(Some(make_solc_metadata("0.8.19", Some("0.1.0-dev.13"))));
-        let contract2 = make_contract(Some(make_solc_metadata("0.8.25", Some("0.1.0-dev.15"))));
+        let contract1 = make_contract(Some(make_solc_metadata("0.8.19", Some("0.6.0"))));
+        let contract2 = make_contract(Some(make_solc_metadata("0.8.25", Some("0.6.0"))));
 
         let solc_contract1: foundry_compilers_artifacts_solc::Contract = contract1.into();
         let solc_contract2: foundry_compilers_artifacts_solc::Contract = contract2.into();

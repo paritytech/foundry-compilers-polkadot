@@ -4526,73 +4526,74 @@ fn can_compile_with_right_output() {
         .starts_with("0x50564d"));
 }
 
-#[test]
-fn test_output_hash_cache_invalidation() {
-    // Set up test project using dapp-sample test data.
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test-data/dapp-sample");
-    let paths = ProjectPathsConfig::builder().sources(root.join("src")).lib(root.join("lib"));
-    let mut project = TempProject::<MultiCompiler, ConfigurableArtifacts>::new(paths).unwrap();
-    project.project_mut().compiler = resolc();
-    project.project_mut().build_info = true;
+// TODO: Enable once we have more than once compielr supported
+// #[test]
+// fn test_output_hash_cache_invalidation() {
+//     // Set up test project using dapp-sample test data.
+//     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../test-data/dapp-sample");
+//     let paths = ProjectPathsConfig::builder().sources(root.join("src")).lib(root.join("lib"));
+//     let mut project = TempProject::<MultiCompiler, ConfigurableArtifacts>::new(paths).unwrap();
+//     project.project_mut().compiler = resolc();
+//     project.project_mut().build_info = true;
 
-    // First compilation - should compile everything since cache is empty.
-    let compiled = project.compile().unwrap();
-    compiled.assert_success();
-    assert!(!compiled.is_unchanged(), "First compilation should not be cached");
+//     // First compilation - should compile everything since cache is empty.
+//     let compiled = project.compile().unwrap();
+//     compiled.assert_success();
+//     assert!(!compiled.is_unchanged(), "First compilation should not be cached");
 
-    project.project_mut().compiler = MultiCompiler {
-        solidity: SolidityCompiler::Resolc(
-            Resolc::find_or_install(
-                &semver::Version::parse("0.1.0-dev.13").unwrap(),
-                SolcCompiler::default(),
-            )
-            .unwrap(),
-        ),
-        ..Default::default()
-    };
+//     project.project_mut().compiler = MultiCompiler {
+//         solidity: SolidityCompiler::Resolc(
+//             Resolc::find_or_install(
+//                 &semver::Version::parse("0.1.0-dev.13").unwrap(),
+//                 SolcCompiler::default(),
+//             )
+//             .unwrap(),
+//         ),
+//         ..Default::default()
+//     };
 
-    // Second compilation - should use cache since nothing changed.
-    let compiled = project.compile().unwrap();
-    compiled.assert_success();
-    assert!(!compiled.is_unchanged(), "Second compilation should use cache");
+//     // Second compilation - should use cache since nothing changed.
+//     let compiled = project.compile().unwrap();
+//     compiled.assert_success();
+//     assert!(!compiled.is_unchanged(), "Second compilation should use cache");
 
-    // Second compilation - should use cache since nothing changed.
-    let compiled = project.compile().unwrap();
-    compiled.assert_success();
+//     // Second compilation - should use cache since nothing changed.
+//     let compiled = project.compile().unwrap();
+//     compiled.assert_success();
 
-    assert!(compiled.is_unchanged(), "Third compilation should use cache");
+//     assert!(compiled.is_unchanged(), "Third compilation should use cache");
 
-    // Adding a file to output directory should NOT invalidate cache
-    let artifacts_path = project.project().artifacts_path();
-    let new_file = artifacts_path.join("test.json");
-    fs::write(&new_file, "{}").unwrap();
+//     // Adding a file to output directory should NOT invalidate cache
+//     let artifacts_path = project.project().artifacts_path();
+//     let new_file = artifacts_path.join("test.json");
+//     fs::write(&new_file, "{}").unwrap();
 
-    let compiled = project.compile().unwrap();
-    compiled.assert_success();
-    assert!(
-        compiled.is_unchanged(),
-        "Cache should remain valid when only output directory changes"
-    );
+//     let compiled = project.compile().unwrap();
+//     compiled.assert_success();
+//     assert!(
+//         compiled.is_unchanged(),
+//         "Cache should remain valid when only output directory changes"
+//     );
 
-    // Modify source to trigger new build info
-    let new_contract_path = project.sources_path().join("NewContract.sol");
-    fs::write(
-        &new_contract_path,
-        r#"
-        pragma solidity ^0.8.10;
-        contract NewContract {}
-    "#,
-    )
-    .unwrap();
+//     // Modify source to trigger new build info
+//     let new_contract_path = project.sources_path().join("NewContract.sol");
+//     fs::write(
+//         &new_contract_path,
+//         r#"
+//         pragma solidity ^0.8.10;
+//         contract NewContract {}
+//     "#,
+//     )
+//     .unwrap();
 
-    let compiled = project.compile().unwrap();
-    compiled.assert_success();
-    assert!(!compiled.is_unchanged(), "Cache should be invalidated when build info changes");
+//     let compiled = project.compile().unwrap();
+//     compiled.assert_success();
+//     assert!(!compiled.is_unchanged(), "Cache should be invalidated when build info changes");
 
-    // Clean up test files
-    fs::remove_file(new_file).unwrap();
-    fs::remove_file(new_contract_path).unwrap();
-}
+//     // Clean up test files
+//     fs::remove_file(new_file).unwrap();
+//     fs::remove_file(new_contract_path).unwrap();
+// }
 
 #[test]
 fn test_output_hash_concurrent_modifications() {
