@@ -14,9 +14,14 @@ use std::{
     path::{Path, PathBuf},
     process::{Child, Command, Output, Stdio},
     str::FromStr,
+    sync::LazyLock,
 };
 
 use super::{ResolcInput, ResolcVersionedInput};
+
+pub static SUPPORTED_RESOLC_VERSIONS: LazyLock<VersionReq> = LazyLock::new(|| {
+    VersionReq::parse(">=0.6.0, <0.7.0").expect("valid version requirement")
+});
 
 #[derive(Clone, Debug)]
 pub struct Resolc {
@@ -108,12 +113,33 @@ impl Resolc {
         let resolc_path = resolc_path.into();
         let resolc_version = Self::get_version_for_path(&resolc_path)?;
         let supported_solc_versions = Self::supported_solc_versions(&resolc_path)?;
-        Ok(Self {
+
+        let instance = Self {
             resolc_version,
             resolc: resolc_path,
             solc: solc_compiler,
             supported_solc_versions,
-        })
+        };
+
+        instance.check_foundry_compatibility()?;
+        Ok(instance)
+    }
+
+    /// Check if a resolc version is compatible with foundry-compilers.
+    fn check_version_compatibility(version: &Version) -> Result<()> {
+        if !SUPPORTED_RESOLC_VERSIONS.matches(version) {
+            return Err(SolcError::Message(format!(
+                "resolc v{} is incompatible with foundry-compilers.\n\
+                 Supported resolc versions: {}",
+                version, *SUPPORTED_RESOLC_VERSIONS
+            )));
+        }
+        Ok(())
+    }
+
+    /// Check if this resolc instance is compatible with foundry-compilers.
+    fn check_foundry_compatibility(&self) -> Result<()> {
+        Self::check_version_compatibility(&self.resolc_version)
     }
 
     pub fn find_installed(
@@ -131,12 +157,14 @@ impl Resolc {
             Ok(bin) => bin
                 .local()
                 .map(|path| {
-                    Ok(Self {
+                    let instance = Self {
                         resolc_version: bin.version().to_owned(),
                         resolc: path.to_owned(),
                         solc: solc_compiler,
                         supported_solc_versions: binary_compat_info(&bin),
-                    })
+                    };
+                    instance.check_foundry_compatibility()?;
+                    Ok(instance)
                 })
                 .transpose(),
             Err(rvm::Error::UnknownVersion { .. } | rvm::Error::NotInstalled { .. }) => Ok(None),
@@ -178,16 +206,18 @@ impl Resolc {
                 // Always will end up being `Binary::Local { .. }`
                 let binary = {
                     if let Some(resolc_version) = _resolc_version {
+                        Self::check_version_compatibility(resolc_version)?;
                         version_manager
                             .get_or_install(resolc_version, _solc_version.clone())
                             .map_err(|e| SolcError::Message(e.to_string()))?
                     } else {
                         let versions = version_manager
                             .list_available(_solc_version.clone())
+                            .retain(|binary| SUPPORTED_RESOLC_VERSIONS.matches(binary.version()))
                             .map_err(|e| SolcError::Message(e.to_string()))?;
 
                         let Some(binary) = versions.into_iter().next_back() else {
-                            let message = "No `resolc` versions available.".to_string();
+                            let message = "No compatible `resolc` versions available".to_string();
                             return Err(SolcError::Message(message));
                         };
                         match binary {
