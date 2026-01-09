@@ -19,9 +19,8 @@ use std::{
 
 use super::{ResolcInput, ResolcVersionedInput};
 
-pub static SUPPORTED_RESOLC_VERSIONS: LazyLock<VersionReq> = LazyLock::new(|| {
-    VersionReq::parse(">=0.6.0, <0.7.0").expect("valid version requirement")
-});
+pub static SUPPORTED_RESOLC_VERSIONS: LazyLock<VersionReq> =
+    LazyLock::new(|| VersionReq::parse(">=0.6.0, <0.7.0").expect("valid version requirement"));
 
 #[derive(Clone, Debug)]
 pub struct Resolc {
@@ -213,8 +212,9 @@ impl Resolc {
                     } else {
                         let versions = version_manager
                             .list_available(_solc_version.clone())
-                            .retain(|binary| SUPPORTED_RESOLC_VERSIONS.matches(binary.version()))
-                            .map_err(|e| SolcError::Message(e.to_string()))?;
+                            .map_err(|e| SolcError::Message(e.to_string()))?
+                            .into_iter()
+                            .filter(|binary| SUPPORTED_RESOLC_VERSIONS.matches(binary.version()));
 
                         let Some(binary) = versions.into_iter().next_back() else {
                             let message = "No compatible `resolc` versions available".to_string();
