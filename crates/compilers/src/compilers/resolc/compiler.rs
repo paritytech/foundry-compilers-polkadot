@@ -111,17 +111,14 @@ impl Resolc {
     pub fn new(resolc_path: impl Into<PathBuf>, solc_compiler: SolcCompiler) -> Result<Self> {
         let resolc_path = resolc_path.into();
         let resolc_version = Self::get_version_for_path(&resolc_path)?;
+        Self::check_version_compatibility(&resolc_version)?;
         let supported_solc_versions = Self::supported_solc_versions(&resolc_path)?;
-
-        let instance = Self {
+        Ok(Self {
             resolc_version,
             resolc: resolc_path,
             solc: solc_compiler,
             supported_solc_versions,
-        };
-
-        instance.check_foundry_compatibility()?;
-        Ok(instance)
+        })
     }
 
     /// Check if a resolc version is compatible with foundry-compilers.
@@ -134,11 +131,6 @@ impl Resolc {
             )));
         }
         Ok(())
-    }
-
-    /// Check if this resolc instance is compatible with foundry-compilers.
-    fn check_foundry_compatibility(&self) -> Result<()> {
-        Self::check_version_compatibility(&self.resolc_version)
     }
 
     pub fn find_installed(
@@ -156,14 +148,14 @@ impl Resolc {
             Ok(bin) => bin
                 .local()
                 .map(|path| {
-                    let instance = Self {
-                        resolc_version: bin.version().to_owned(),
+                    let resolc_version = bin.version().to_owned();
+                    Self::check_version_compatibility(&resolc_version)?;
+                    Ok(Self {
+                        resolc_version,
                         resolc: path.to_owned(),
                         solc: solc_compiler,
                         supported_solc_versions: binary_compat_info(&bin),
-                    };
-                    instance.check_foundry_compatibility()?;
-                    Ok(instance)
+                    })
                 })
                 .transpose(),
             Err(rvm::Error::UnknownVersion { .. } | rvm::Error::NotInstalled { .. }) => Ok(None),

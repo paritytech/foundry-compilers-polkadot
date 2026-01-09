@@ -4526,7 +4526,7 @@ fn can_compile_with_right_output() {
         .starts_with("0x50564d"));
 }
 
-// TODO: Enable once we have more than once compielr supported
+// TODO: Enable when more than one compiler is supported
 // #[test]
 // fn test_output_hash_cache_invalidation() {
 //     // Set up test project using dapp-sample test data.
