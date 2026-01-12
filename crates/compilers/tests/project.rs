@@ -109,7 +109,7 @@ pub static RESOLC: LazyLock<Resolc> = LazyLock::new(|| {
 
     take_solc_installer_lock!(_lock);
 
-    Resolc::install(None, solc).unwrap()
+    Resolc::install(Some(&Version::new(0, 3, 0)), solc).unwrap()
 });
 
 #[fixture]
