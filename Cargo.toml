@@ -43,7 +43,7 @@ foundry-compilers-artifacts-vyper = { path = "crates/artifacts/vyper", version =
 foundry-compilers-artifacts-resolc = { path = "crates/artifacts/resolc", version = "0.18.2" }
 foundry-compilers-core = { path = "crates/core", version = "0.18.2" }
 rvm = { package = "rvm-rs", version = "0.0.3", default-features = false }
-revive-solc-json-interface = { version = "0.1", default-features = false }
+revive-solc-json-interface = { version = "0.5", default-features = false }
 alloy-json-abi = { version = "1.2", features = ["serde_json"] }
 alloy-primitives = { version = "1.2", features = ["serde", "rand"] }
 cfg-if = "1.0"
