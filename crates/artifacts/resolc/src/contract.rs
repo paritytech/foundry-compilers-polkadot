@@ -72,7 +72,6 @@ impl From<ResolcContract> for foundry_compilers_artifacts_solc::Contract {
             }
             _ => None,
         };
-
         Self {
             abi: contract.abi,
             evm: contract.evm.map(Into::into),
