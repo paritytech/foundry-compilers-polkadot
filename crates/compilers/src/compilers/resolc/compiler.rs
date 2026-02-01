@@ -20,7 +20,7 @@ use std::{
 use super::{ResolcInput, ResolcVersionedInput};
 
 pub static SUPPORTED_RESOLC_VERSIONS: LazyLock<VersionReq> =
-    LazyLock::new(|| VersionReq::parse(">=0.6.0, <0.7.0").expect("valid version requirement"));
+    LazyLock::new(|| VersionReq::parse(">=0.6.0, <2.0.0").expect("valid version requirement"));
 
 #[derive(Clone, Debug)]
 pub struct Resolc {
