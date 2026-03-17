@@ -87,6 +87,9 @@ impl From<ResolcContract> for foundry_compilers_artifacts_solc::Contract {
             extensions: foundry_compilers_artifacts_solc::ArtifactExtras::Resolc(ResolcExtras {
                 hash: contract.hash,
                 factory_dependencies: contract.factory_dependencies,
+                missing_libraries: contract.missing_libraries
+                    .filter(|libs| !libs.is_empty())
+                    .map(|libs| libs.into_iter().collect()),
             }),
         }
     }

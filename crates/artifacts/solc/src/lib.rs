@@ -10,7 +10,7 @@ extern crate tracing;
 use semver::Version;
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fmt,
     path::{Path, PathBuf},
     str::FromStr,
@@ -1841,6 +1841,9 @@ pub struct ResolcExtras {
     /// The contract factory dependencies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub factory_dependencies: Option<BTreeMap<String, String>>,
+    /// Unresolved library references reported by the compiler.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub missing_libraries: Option<BTreeSet<String>>,
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
