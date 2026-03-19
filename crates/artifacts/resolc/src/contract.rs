@@ -180,4 +180,73 @@ mod tests {
         assert_eq!(solc_contract1.metadata.as_ref().unwrap().metadata.compiler.version, "0.8.19");
         assert_eq!(solc_contract2.metadata.as_ref().unwrap().metadata.compiler.version, "0.8.25");
     }
+
+    fn get_missing_libraries(
+        contract: &foundry_compilers_artifacts_solc::Contract,
+    ) -> Option<std::collections::BTreeSet<String>> {
+        contract.extensions.resolc_extras().and_then(|e| e.missing_libraries)
+    }
+
+    #[test]
+    fn conversion_missing_libraries_none() {
+        let contract = make_contract(None);
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert!(get_missing_libraries(&solc_contract).is_none());
+    }
+
+    #[test]
+    fn conversion_missing_libraries_empty_becomes_none() {
+        let mut contract = make_contract(None);
+        contract.missing_libraries = Some(HashSet::new());
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert!(get_missing_libraries(&solc_contract).is_none());
+    }
+
+    #[test]
+    fn conversion_missing_libraries_populated() {
+        let mut contract = make_contract(None);
+        contract.missing_libraries = Some(HashSet::from([
+            "src/Lib.sol:MathLib".to_string(),
+            "src/Lib.sol:StringLib".to_string(),
+        ]));
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let libs = get_missing_libraries(&solc_contract).unwrap();
+        assert_eq!(libs.len(), 2);
+        assert!(libs.contains("src/Lib.sol:MathLib"));
+        assert!(libs.contains("src/Lib.sol:StringLib"));
+    }
+
+    #[test]
+    fn conversion_missing_libraries_single() {
+        let mut contract = make_contract(None);
+        contract.missing_libraries = Some(HashSet::from(["src/Lib.sol:MathLib".to_string()]));
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let libs = get_missing_libraries(&solc_contract).unwrap();
+        assert_eq!(libs.len(), 1);
+        assert!(libs.contains("src/Lib.sol:MathLib"));
+    }
+
+    #[test]
+    fn conversion_missing_libraries_serialization_roundtrip() {
+        let mut contract = make_contract(None);
+        contract.missing_libraries = Some(HashSet::from([
+            "src/Lib.sol:MathLib".to_string(),
+            "src/Utils.sol:ArrayUtils".to_string(),
+        ]));
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let json = serde_json::to_string(&solc_contract).unwrap();
+        let deserialized: foundry_compilers_artifacts_solc::Contract =
+            serde_json::from_str(&json).unwrap();
+        assert_eq!(get_missing_libraries(&solc_contract), get_missing_libraries(&deserialized));
+    }
+
+    #[test]
+    fn conversion_missing_libraries_none_not_serialized() {
+        let contract = make_contract(None);
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let json = serde_json::to_value(&solc_contract).unwrap();
+        let extensions = json.get("extensions").unwrap();
+        let resolc = extensions.get("Resolc").unwrap();
+        assert!(resolc.get("missing_libraries").is_none());
+    }
 }
