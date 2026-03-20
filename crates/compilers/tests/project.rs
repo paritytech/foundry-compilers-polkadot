@@ -4686,3 +4686,218 @@ fn test_output_hash_special_filenames() {
     fs::remove_file(artifacts_path.join("underscore_file.json")).unwrap();
     fs::remove_file(artifacts_path.join("dash-file.json")).unwrap();
 }
+
+#[test]
+fn resolc_missing_libraries_populated_for_library_consumer() {
+    let mut tmp = TempProject::<MultiCompiler>::dapptools().unwrap();
+    tmp.project_mut().compiler = resolc();
+
+    tmp.add_source(
+        "MyLib",
+        r"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+library MyLib {
+    function plus100(uint256 a) public pure returns (uint256) {
+        return a + 100;
+    }
+}
+",
+    )
+    .unwrap();
+
+    tmp.add_source(
+        "Consumer",
+        r#"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+import "./MyLib.sol";
+contract Consumer {
+    function consume(uint256 a) public pure returns (uint256) {
+        return MyLib.plus100(a);
+    }
+}
+"#,
+    )
+    .unwrap();
+
+    let compiled = tmp.compile().unwrap();
+    compiled.assert_success();
+
+    let consumer = compiled.find_first("Consumer").unwrap();
+    let extras = consumer.extensions.resolc_extras().expect("should have resolc extras");
+    let missing = extras.missing_libraries.expect("Consumer should have missing_libraries");
+    assert_eq!(missing.len(), 1);
+    assert!(
+        missing.iter().any(|lib| lib.contains("MyLib")),
+        "missing_libraries should reference MyLib, got: {missing:?}"
+    );
+
+    let lib_artifact = compiled.find_first("MyLib").unwrap();
+    let lib_extras = lib_artifact.extensions.resolc_extras().expect("should have resolc extras");
+    assert!(
+        lib_extras.missing_libraries.is_none(),
+        "library itself should not have missing_libraries"
+    );
+}
+
+#[test]
+fn resolc_missing_libraries_multiple_libs() {
+    let mut tmp = TempProject::<MultiCompiler>::dapptools().unwrap();
+    tmp.project_mut().compiler = resolc();
+
+    tmp.add_source(
+        "LibA",
+        r"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+library LibA {
+    function double(uint256 a) public pure returns (uint256) {
+        return a * 2;
+    }
+}
+",
+    )
+    .unwrap();
+
+    tmp.add_source(
+        "LibB",
+        r"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+library LibB {
+    function triple(uint256 a) public pure returns (uint256) {
+        return a * 3;
+    }
+}
+",
+    )
+    .unwrap();
+
+    tmp.add_source(
+        "MultiConsumer",
+        r#"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+import "./LibA.sol";
+import "./LibB.sol";
+contract MultiConsumer {
+    function compute(uint256 a) public pure returns (uint256) {
+        return LibA.double(a) + LibB.triple(a);
+    }
+}
+"#,
+    )
+    .unwrap();
+
+    let compiled = tmp.compile().unwrap();
+    compiled.assert_success();
+
+    let consumer = compiled.find_first("MultiConsumer").unwrap();
+    let extras = consumer.extensions.resolc_extras().expect("should have resolc extras");
+    let missing = extras.missing_libraries.expect("MultiConsumer should have missing_libraries");
+    assert_eq!(missing.len(), 2, "should reference both libraries, got: {missing:?}");
+    assert!(missing.iter().any(|lib| lib.contains("LibA")));
+    assert!(missing.iter().any(|lib| lib.contains("LibB")));
+}
+
+#[test]
+fn resolc_no_missing_libraries_without_library_usage() {
+    let mut tmp = TempProject::<MultiCompiler>::dapptools().unwrap();
+    tmp.project_mut().compiler = resolc();
+
+    tmp.add_source(
+        "Simple",
+        r"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+contract Simple {
+    uint256 public value;
+    function set(uint256 v) public {
+        value = v;
+    }
+}
+",
+    )
+    .unwrap();
+
+    let compiled = tmp.compile().unwrap();
+    compiled.assert_success();
+
+    let contract = compiled.find_first("Simple").unwrap();
+    let extras = contract.extensions.resolc_extras().expect("should have resolc extras");
+    assert!(
+        extras.missing_libraries.is_none(),
+        "contract without libraries should have no missing_libraries"
+    );
+}
+
+#[test]
+fn resolc_missing_libraries_nested_deps() {
+    let mut tmp = TempProject::<MultiCompiler>::dapptools().unwrap();
+    tmp.project_mut().compiler = resolc();
+
+    tmp.add_source(
+        "InnerLib",
+        r"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+library InnerLib {
+    function add50(uint256 a) public pure returns (uint256) {
+        return a + 50;
+    }
+}
+",
+    )
+    .unwrap();
+
+    tmp.add_source(
+        "OuterLib",
+        r#"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+import "./InnerLib.sol";
+library OuterLib {
+    function add150(uint256 a) public pure returns (uint256) {
+        return InnerLib.add50(a) + 100;
+    }
+}
+"#,
+    )
+    .unwrap();
+
+    tmp.add_source(
+        "NestedConsumer",
+        r#"
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+import "./OuterLib.sol";
+contract NestedConsumer {
+    function compute(uint256 a) public pure returns (uint256) {
+        return OuterLib.add150(a);
+    }
+}
+"#,
+    )
+    .unwrap();
+
+    let compiled = tmp.compile().unwrap();
+    compiled.assert_success();
+
+    let consumer = compiled.find_first("NestedConsumer").unwrap();
+    let extras = consumer.extensions.resolc_extras().expect("should have resolc extras");
+    let missing = extras.missing_libraries.expect("NestedConsumer should have missing_libraries");
+    assert!(
+        missing.iter().any(|lib| lib.contains("OuterLib")),
+        "should reference OuterLib, got: {missing:?}"
+    );
+
+    let outer = compiled.find_first("OuterLib").unwrap();
+    let outer_extras = outer.extensions.resolc_extras().expect("should have resolc extras");
+    let outer_missing =
+        outer_extras.missing_libraries.expect("OuterLib should have missing_libraries");
+    assert!(
+        outer_missing.iter().any(|lib| lib.contains("InnerLib")),
+        "OuterLib should reference InnerLib, got: {outer_missing:?}"
+    );
+}
