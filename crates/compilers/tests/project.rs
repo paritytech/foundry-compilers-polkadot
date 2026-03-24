@@ -26,7 +26,7 @@ use foundry_compilers::{
 use foundry_compilers_artifacts::{
     output_selection::OutputSelection, remappings::Remapping, BytecodeHash, Contract, DevDoc,
     Error, ErrorDoc, EventDoc, EvmVersion, Libraries, MethodDoc, ModelCheckerEngine::CHC,
-    ModelCheckerSettings, Settings, Severity, SolcInput, UserDoc, UserDocNotice,
+    ModelCheckerSettings, ObjectFormat, Settings, Severity, SolcInput, UserDoc, UserDocNotice,
 };
 use foundry_compilers_core::{
     error::SolcError,
@@ -4724,6 +4724,7 @@ contract Consumer {
     let compiled = tmp.compile().unwrap();
     compiled.assert_success();
 
+    // Unlinked consumer: has missing_libraries, ELF object format, unlinked factory deps
     let consumer = compiled.find_first("Consumer").unwrap();
     let extras = consumer.extensions.resolc_extras().expect("should have resolc extras");
     let missing = extras.missing_libraries.expect("Consumer should have missing_libraries");
@@ -4732,12 +4733,34 @@ contract Consumer {
         missing.iter().any(|lib| lib.contains("MyLib")),
         "missing_libraries should reference MyLib, got: {missing:?}"
     );
+    assert_eq!(
+        extras.object_format,
+        Some(ObjectFormat::ELF),
+        "unlinked consumer should have ELF object format"
+    );
+    let factory_deps = extras.factory_dependencies.as_ref();
+    assert!(
+        factory_deps.is_none() || factory_deps.unwrap().is_empty(),
+        "unlinked consumer should have no resolved factory_dependencies"
+    );
+    if let Some(unlinked_deps) = extras.factory_dependencies_unlinked.as_ref() {
+        assert!(
+            unlinked_deps.iter().any(|dep| dep.contains("MyLib")),
+            "factory_dependencies_unlinked should reference MyLib, got: {unlinked_deps:?}"
+        );
+    }
 
+    // Library itself: no missing_libraries, PVM object format
     let lib_artifact = compiled.find_first("MyLib").unwrap();
     let lib_extras = lib_artifact.extensions.resolc_extras().expect("should have resolc extras");
     assert!(
         lib_extras.missing_libraries.is_none(),
         "library itself should not have missing_libraries"
+    );
+    assert_eq!(
+        lib_extras.object_format,
+        Some(ObjectFormat::PVM),
+        "library should have PVM object format"
     );
 }
 
@@ -4799,6 +4822,12 @@ contract MultiConsumer {
     assert_eq!(missing.len(), 2, "should reference both libraries, got: {missing:?}");
     assert!(missing.iter().any(|lib| lib.contains("LibA")));
     assert!(missing.iter().any(|lib| lib.contains("LibB")));
+    assert_eq!(extras.object_format, Some(ObjectFormat::ELF));
+
+    if let Some(unlinked_deps) = extras.factory_dependencies_unlinked.as_ref() {
+        assert!(unlinked_deps.iter().any(|dep| dep.contains("LibA")));
+        assert!(unlinked_deps.iter().any(|dep| dep.contains("LibB")));
+    }
 }
 
 #[test]
@@ -4829,6 +4858,20 @@ contract Simple {
     assert!(
         extras.missing_libraries.is_none(),
         "contract without libraries should have no missing_libraries"
+    );
+    assert_eq!(
+        extras.object_format,
+        Some(ObjectFormat::PVM),
+        "fully linked contract should have PVM object format"
+    );
+    assert!(
+        extras.factory_dependencies.is_some(),
+        "fully linked contract should have factory_dependencies"
+    );
+    assert!(
+        extras.factory_dependencies_unlinked.is_none()
+            || extras.factory_dependencies_unlinked.as_ref().unwrap().is_empty(),
+        "fully linked contract should have no unlinked factory dependencies"
     );
 }
 
@@ -4891,6 +4934,7 @@ contract NestedConsumer {
         missing.iter().any(|lib| lib.contains("OuterLib")),
         "should reference OuterLib, got: {missing:?}"
     );
+    assert_eq!(extras.object_format, Some(ObjectFormat::ELF));
 
     let outer = compiled.find_first("OuterLib").unwrap();
     let outer_extras = outer.extensions.resolc_extras().expect("should have resolc extras");
@@ -4900,4 +4944,10 @@ contract NestedConsumer {
         outer_missing.iter().any(|lib| lib.contains("InnerLib")),
         "OuterLib should reference InnerLib, got: {outer_missing:?}"
     );
+    assert_eq!(outer_extras.object_format, Some(ObjectFormat::ELF));
+
+    let inner = compiled.find_first("InnerLib").unwrap();
+    let inner_extras = inner.extensions.resolc_extras().expect("should have resolc extras");
+    assert!(inner_extras.missing_libraries.is_none(), "InnerLib has no library deps");
+    assert_eq!(inner_extras.object_format, Some(ObjectFormat::PVM));
 }

@@ -1,8 +1,8 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 use alloy_json_abi::JsonAbi;
 use foundry_compilers_artifacts_solc::{
-    DevDoc, LosslessMetadata, ResolcExtras, StorageLayout, UserDoc,
+    DevDoc, LosslessMetadata, ObjectFormat, ResolcExtras, StorageLayout, UserDoc,
 };
 use serde::{Deserialize, Serialize};
 
@@ -41,9 +41,15 @@ pub struct ResolcContract {
     /// The contract factory dependencies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub factory_dependencies: Option<BTreeMap<String, String>>,
+    /// Unlinked factory dependencies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub factory_dependencies_unlinked: Option<BTreeSet<String>>,
     /// The contract missing libraries.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub missing_libraries: Option<HashSet<String>>,
+    /// Binary object format (ELF for unlinked, PVM for linked).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub object_format: Option<ObjectFormat>,
 }
 
 impl From<ResolcContract> for foundry_compilers_artifacts_solc::Contract {
@@ -87,10 +93,14 @@ impl From<ResolcContract> for foundry_compilers_artifacts_solc::Contract {
             extensions: foundry_compilers_artifacts_solc::ArtifactExtras::Resolc(ResolcExtras {
                 hash: contract.hash,
                 factory_dependencies: contract.factory_dependencies,
+                factory_dependencies_unlinked: contract
+                    .factory_dependencies_unlinked
+                    .filter(|deps| !deps.is_empty()),
                 missing_libraries: contract
                     .missing_libraries
                     .filter(|libs| !libs.is_empty())
                     .map(|libs| libs.into_iter().collect()),
+                object_format: contract.object_format,
             }),
         }
     }
@@ -131,7 +141,9 @@ mod tests {
             ir_optimized: Some("test_ir_optimized".to_string()),
             hash: Some("test_hash".to_string()),
             factory_dependencies: None,
+            factory_dependencies_unlinked: None,
             missing_libraries: None,
+            object_format: None,
         }
     }
 
@@ -248,5 +260,68 @@ mod tests {
         let extensions = json.get("extensions").unwrap();
         let resolc = extensions.get("Resolc").unwrap();
         assert!(resolc.get("missing_libraries").is_none());
+    }
+
+    fn get_extras(contract: &foundry_compilers_artifacts_solc::Contract) -> ResolcExtras {
+        contract.extensions.resolc_extras().expect("should have resolc extras")
+    }
+
+    #[test]
+    fn conversion_object_format_elf() {
+        let mut contract = make_contract(None);
+        contract.object_format = Some(ObjectFormat::ELF);
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert_eq!(get_extras(&solc_contract).object_format, Some(ObjectFormat::ELF));
+    }
+
+    #[test]
+    fn conversion_object_format_pvm() {
+        let mut contract = make_contract(None);
+        contract.object_format = Some(ObjectFormat::PVM);
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert_eq!(get_extras(&solc_contract).object_format, Some(ObjectFormat::PVM));
+    }
+
+    #[test]
+    fn conversion_object_format_none() {
+        let contract = make_contract(None);
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert!(get_extras(&solc_contract).object_format.is_none());
+    }
+
+    #[test]
+    fn conversion_factory_dependencies_unlinked() {
+        let mut contract = make_contract(None);
+        contract.factory_dependencies_unlinked =
+            Some(BTreeSet::from(["src/Lib.sol:MathLib".to_string()]));
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let unlinked = get_extras(&solc_contract).factory_dependencies_unlinked.unwrap();
+        assert_eq!(unlinked.len(), 1);
+        assert!(unlinked.contains("src/Lib.sol:MathLib"));
+    }
+
+    #[test]
+    fn conversion_factory_dependencies_unlinked_empty_becomes_none() {
+        let mut contract = make_contract(None);
+        contract.factory_dependencies_unlinked = Some(BTreeSet::new());
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        assert!(get_extras(&solc_contract).factory_dependencies_unlinked.is_none());
+    }
+
+    #[test]
+    fn conversion_object_format_serialization_roundtrip() {
+        let mut contract = make_contract(None);
+        contract.object_format = Some(ObjectFormat::ELF);
+        contract.factory_dependencies_unlinked =
+            Some(BTreeSet::from(["src/Lib.sol:MathLib".to_string()]));
+        contract.missing_libraries = Some(HashSet::from(["src/Lib.sol:MathLib".to_string()]));
+        let solc_contract: foundry_compilers_artifacts_solc::Contract = contract.into();
+        let json = serde_json::to_string(&solc_contract).unwrap();
+        let deserialized: foundry_compilers_artifacts_solc::Contract =
+            serde_json::from_str(&json).unwrap();
+        let extras = get_extras(&deserialized);
+        assert_eq!(extras.object_format, Some(ObjectFormat::ELF));
+        assert_eq!(extras.factory_dependencies_unlinked.as_ref().unwrap().len(), 1);
+        assert_eq!(extras.missing_libraries.as_ref().unwrap().len(), 1);
     }
 }
