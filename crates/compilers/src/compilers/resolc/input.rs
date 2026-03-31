@@ -21,6 +21,7 @@ pub struct ResolcOptimizer {
 }
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PolkaVM {
     #[serde(default)]
     pub memory_config: MemoryConfig,
@@ -28,11 +29,12 @@ pub struct PolkaVM {
     pub debug_information: bool,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MemoryConfig {
-    #[serde(default)]
-    pub heap_size: u32,
-    #[serde(default)]
-    pub stack_size: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_size: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stack_size: Option<u32>,
 }
 
 impl Default for MemoryConfig {
@@ -44,7 +46,7 @@ impl Default for MemoryConfig {
 
 #[derive(Clone, Default, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResolcSettings {
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub polkavm: Option<PolkaVM>,
     #[serde(default)]
     pub resolc_optimizer: ResolcOptimizer,
@@ -65,11 +67,11 @@ impl ResolcSettings {
             let mut pvm = PolkaVM::default();
 
             if let Some(heap_size) = heap_size {
-                pvm.memory_config.heap_size = heap_size
+                pvm.memory_config.heap_size = Some(heap_size)
             }
 
             if let Some(stack_size) = stack_size {
-                pvm.memory_config.stack_size = stack_size
+                pvm.memory_config.stack_size = Some(stack_size)
             }
 
             if let Some(debug_information) = debug_information {
@@ -131,6 +133,7 @@ impl CompilerInput for ResolcVersionedInput {
             "ast",
             "irOptimized",
             "evm.legacyAssembly",
+            "evm",
             "evm.bytecode",
             "evm.deployedBytecode",
             "evm.assembly",
@@ -147,6 +150,11 @@ impl CompilerInput for ResolcVersionedInput {
         settings.update_output_selection(|selection| {
             for (_, key) in selection.0.iter_mut() {
                 for (_, value) in key.iter_mut() {
+                    for x in value.iter_mut() {
+                        if x == "evm.bytecode.object" {
+                            *x = "evm.bytecode".to_owned();
+                        }
+                    }
                     value.retain(|item| hash_set.contains(item.as_str()));
                 }
             }

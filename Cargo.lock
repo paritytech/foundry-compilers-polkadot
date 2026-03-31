@@ -2646,23 +2646,26 @@ dependencies = [
 
 [[package]]
 name = "revive-common"
-version = "0.1.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d2840de13ec1e2d541d1041009f755c4aaf3c9d1500a1378016d7f7b4d0bb3c"
+checksum = "b6b6cd01322fcb8d8c7a1a73afc2420632160d740ce82cda0b44c07f40051e1b"
 dependencies = [
  "anyhow",
+ "hex",
  "serde",
  "serde_json",
  "serde_stacker",
+ "sha3",
 ]
 
 [[package]]
 name = "revive-solc-json-interface"
-version = "0.1.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f145f4208ac7729ffc1dda7ffced056ac0d772ba9b40d9be3fa8abb350d82ef3"
+checksum = "e5ee74bcfe1bad4e66a583772926f0b7a15bd98ddbe57994e382c752afa33c5c"
 dependencies = [
  "anyhow",
+ "hex",
  "revive-common",
  "semver 1.0.26",
  "serde",
@@ -3077,11 +3080,12 @@ dependencies = [
 
 [[package]]
 name = "serde_stacker"
-version = "0.1.12"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69c8defe6c780725cce4ec6ad3bd91e321baf6fa4e255df1f31e345d507ef01a"
+checksum = "d4936375d50c4be7eff22293a9344f8e46f323ed2b3c243e52f89138d9bb0f4a"
 dependencies = [
  "serde",
+ "serde_core",
  "stacker",
 ]
 

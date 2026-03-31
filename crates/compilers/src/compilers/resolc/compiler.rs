@@ -14,9 +14,13 @@ use std::{
     path::{Path, PathBuf},
     process::{Child, Command, Output, Stdio},
     str::FromStr,
+    sync::LazyLock,
 };
 
 use super::{ResolcInput, ResolcVersionedInput};
+
+pub static SUPPORTED_RESOLC_VERSIONS: LazyLock<VersionReq> =
+    LazyLock::new(|| VersionReq::parse(">=0.6.0, <2.0.0").expect("valid version requirement"));
 
 #[derive(Clone, Debug)]
 pub struct Resolc {
@@ -107,6 +111,7 @@ impl Resolc {
     pub fn new(resolc_path: impl Into<PathBuf>, solc_compiler: SolcCompiler) -> Result<Self> {
         let resolc_path = resolc_path.into();
         let resolc_version = Self::get_version_for_path(&resolc_path)?;
+        Self::check_version_compatibility(&resolc_version)?;
         let supported_solc_versions = Self::supported_solc_versions(&resolc_path)?;
         Ok(Self {
             resolc_version,
@@ -114,6 +119,18 @@ impl Resolc {
             solc: solc_compiler,
             supported_solc_versions,
         })
+    }
+
+    /// Check if a resolc version is compatible with foundry-compilers.
+    fn check_version_compatibility(version: &Version) -> Result<()> {
+        if !SUPPORTED_RESOLC_VERSIONS.matches(version) {
+            return Err(SolcError::Message(format!(
+                "resolc v{} is incompatible with foundry-compilers.\n\
+                 Supported resolc versions: {}",
+                version, *SUPPORTED_RESOLC_VERSIONS
+            )));
+        }
+        Ok(())
     }
 
     pub fn find_installed(
@@ -131,8 +148,10 @@ impl Resolc {
             Ok(bin) => bin
                 .local()
                 .map(|path| {
+                    let resolc_version = bin.version().to_owned();
+                    Self::check_version_compatibility(&resolc_version)?;
                     Ok(Self {
-                        resolc_version: bin.version().to_owned(),
+                        resolc_version,
                         resolc: path.to_owned(),
                         solc: solc_compiler,
                         supported_solc_versions: binary_compat_info(&bin),
@@ -178,16 +197,19 @@ impl Resolc {
                 // Always will end up being `Binary::Local { .. }`
                 let binary = {
                     if let Some(resolc_version) = _resolc_version {
+                        Self::check_version_compatibility(resolc_version)?;
                         version_manager
                             .get_or_install(resolc_version, _solc_version.clone())
                             .map_err(|e| SolcError::Message(e.to_string()))?
                     } else {
                         let versions = version_manager
                             .list_available(_solc_version.clone())
-                            .map_err(|e| SolcError::Message(e.to_string()))?;
+                            .map_err(|e| SolcError::Message(e.to_string()))?
+                            .into_iter()
+                            .filter(|binary| SUPPORTED_RESOLC_VERSIONS.matches(binary.version()));
 
                         let Some(binary) = versions.into_iter().next_back() else {
-                            let message = "No `resolc` versions available.".to_string();
+                            let message = "No compatible `resolc` versions available".to_string();
                             return Err(SolcError::Message(message));
                         };
                         match binary {
@@ -353,8 +375,7 @@ fn version_from_output(output: Output) -> Result<Version> {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let version = stdout
             .lines()
-            .filter(|l| !l.trim().is_empty())
-            .next_back()
+            .rfind(|l| !l.trim().is_empty())
             .ok_or_else(|| SolcError::msg("Version not found in resolc output"))?;
         let version = version.split_terminator("version ");
         version
@@ -394,11 +415,11 @@ mod test {
     #[test]
     fn not_existing_version() {
         let result = Resolc::install(
-            semver::Version::parse("0.1.0-dev.33").ok().as_ref(),
+            semver::Version::parse("0.6.66").ok().as_ref(),
             crate::solc::SolcCompiler::AutoDetect,
         )
         .expect_err("should fail");
-        assert_eq!(result.to_string(), "Unknown version of Resolc v0.1.0-dev.33.")
+        assert_eq!(result.to_string(), "Unknown version of Resolc v0.6.66.")
     }
 
     fn solc_with_version() -> Solc {
@@ -408,13 +429,13 @@ mod test {
     #[test]
     fn not_existing_solc() {
         let result = Resolc::install(
-            semver::Version::parse("0.1.0-dev.13").ok().as_ref(),
+            semver::Version::parse("0.6.0").ok().as_ref(),
             crate::solc::SolcCompiler::Specific(solc_with_version()),
         )
         .expect_err("should fail");
         assert_eq!(
             result.to_string(),
-            "Unsupported version of `solc` - v0.4.14 for Resolc v0.1.0-dev.13. Only versions \">=0.8.0, <=0.8.29\" is supported by this version of Resolc"
+            "Unsupported version of `solc` - v0.4.14 for Resolc v0.6.0. Only versions \">=0.8.0, <=0.8.33\" is supported by this version of Resolc"
         )
     }
 }

@@ -10,7 +10,7 @@ extern crate tracing;
 use semver::Version;
 use serde::{de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     fmt,
     path::{Path, PathBuf},
     str::FromStr,
@@ -1838,6 +1838,15 @@ impl SourceFiles {
     }
 }
 
+/// Binary object format for PolkaVM bytecodes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum ObjectFormat {
+    /// Unlinked ELF object format.
+    ELF,
+    /// Fully linked PVM format.
+    PVM,
+}
+
 // Resolc extensions, i don't like that they are here
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub struct ResolcExtras {
@@ -1847,6 +1856,15 @@ pub struct ResolcExtras {
     /// The contract factory dependencies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub factory_dependencies: Option<BTreeMap<String, String>>,
+    /// Unlinked factory dependencies (contract paths that need linking).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub factory_dependencies_unlinked: Option<BTreeSet<String>>,
+    /// Unresolved library references reported by the compiler.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub missing_libraries: Option<BTreeSet<String>>,
+    /// Binary object format (ELF for unlinked, PVM for linked).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub object_format: Option<ObjectFormat>,
 }
 
 #[derive(Default, Clone, Debug, PartialEq, Eq, PartialOrd, Serialize, Deserialize)]
