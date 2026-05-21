@@ -265,7 +265,7 @@ impl Resolc {
                 } else {
                     Err(SolcError::Message(format!(
                         "autodetected `solc` version v{} is not supported by `resolc` v{}. Set explicit `solc` version",
-                        &_input.solc_version, self.resolc_version
+                        _input.solc_version, self.resolc_version
                     )))
                 }
             }
@@ -331,7 +331,7 @@ impl Resolc {
             cmd.arg("--yul");
             cmd.arg(format!(
                 "{}",
-                &input
+                input
                     .sources
                     .first_key_value()
                     .map(|k| k.0.to_string_lossy())

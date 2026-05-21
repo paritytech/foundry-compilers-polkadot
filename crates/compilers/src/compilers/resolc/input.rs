@@ -148,8 +148,8 @@ impl CompilerInput for ResolcVersionedInput {
         };
 
         settings.update_output_selection(|selection| {
-            for (_, key) in selection.0.iter_mut() {
-                for (_, value) in key.iter_mut() {
+            for key in selection.0.values_mut() {
+                for value in key.values_mut() {
                     for x in value.iter_mut() {
                         if x == "evm.bytecode.object" {
                             *x = "evm.bytecode".to_owned();
