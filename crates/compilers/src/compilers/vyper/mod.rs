@@ -1,6 +1,7 @@
-use self::{input::VyperVersionedInput, parser::VyperParsedSource};
+use self::input::VyperVersionedInput;
 use super::{Compiler, CompilerInput, CompilerOutput, Language, SimpleCompilerName};
 pub use crate::artifacts::vyper::{VyperCompilationError, VyperInput, VyperOutput, VyperSettings};
+use crate::parser::VyperParser;
 use core::fmt;
 use foundry_compilers_artifacts::{sources::Source, Contract};
 use foundry_compilers_core::error::{Result, SolcError};
@@ -27,7 +28,7 @@ pub const VYPER_EXTENSIONS: &[&str] = &["vy", "vyi"];
 pub const VYPER_INTERFACE_EXTENSION: &str = "vyi";
 
 /// Vyper language, used as [Compiler::Language] for the Vyper compiler.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub struct VyperLanguage;
 
@@ -208,7 +209,7 @@ impl SimpleCompilerName for Vyper {
 impl Compiler for Vyper {
     type Settings = VyperSettings;
     type CompilationError = VyperCompilationError;
-    type ParsedSource = VyperParsedSource;
+    type Parser = VyperParser;
     type Input = VyperVersionedInput;
     type Language = VyperLanguage;
     type CompilerContract = Contract;

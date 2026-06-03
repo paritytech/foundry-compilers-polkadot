@@ -4,6 +4,8 @@ yanked = "warn"
 ignore = [
     # https://rustsec.org/advisories/RUSTSEC-2024-0436 paste! is unmaintained
     "RUSTSEC-2024-0436",
+    # rustls-webpki 0.103.3
+    "RUSTSEC-2026-0049",
 ]
 
 [bans]

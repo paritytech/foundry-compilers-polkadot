@@ -1,6 +1,6 @@
 use crate::{
     error::{Result, SolcError},
-    resolver::parse::SolData,
+    resolver::parse::SolParser,
     solc::{Solc, SolcCompiler, SolcSettings},
     Compiler, CompilerVersion, SimpleCompilerName,
 };
@@ -34,9 +34,9 @@ impl Compiler for Resolc {
     type CompilerContract = Contract;
     type Input = ResolcVersionedInput;
     type CompilationError = Error;
-    type ParsedSource = SolData;
     type Settings = SolcSettings;
     type Language = SolcLanguage;
+    type Parser = SolParser;
 
     fn compiler_version(&self, _input: &Self::Input) -> Version {
         self.resolc_version.clone()
@@ -265,7 +265,7 @@ impl Resolc {
                 } else {
                     Err(SolcError::Message(format!(
                         "autodetected `solc` version v{} is not supported by `resolc` v{}. Set explicit `solc` version",
-                        &_input.solc_version, self.resolc_version
+                        _input.solc_version, self.resolc_version
                     )))
                 }
             }
@@ -331,7 +331,7 @@ impl Resolc {
             cmd.arg("--yul");
             cmd.arg(format!(
                 "{}",
-                &input
+                input
                     .sources
                     .first_key_value()
                     .map(|k| k.0.to_string_lossy())

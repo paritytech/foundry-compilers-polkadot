@@ -5,11 +5,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.7](https://github.com/foundry-rs/compilers/releases/tag/v0.19.7) - 2025-11-18
+
+### Bug Fixes
+
+- Preserve version to install if prerelease ([#339](https://github.com/foundry-rs/compilers/issues/339))
+- Always mark mocks as dirty ([#335](https://github.com/foundry-rs/compilers/issues/335))
+- Expose VyperSourceLocation fields ([#333](https://github.com/foundry-rs/compilers/issues/333))
+- Finalize_imports node ordering ([#329](https://github.com/foundry-rs/compilers/issues/329))
+- Resolve imports at the end ([#326](https://github.com/foundry-rs/compilers/issues/326))
+- Make sources' paths absolute ([#312](https://github.com/foundry-rs/compilers/issues/312))
+- Sanitize `stopAfter` ([#309](https://github.com/foundry-rs/compilers/issues/309))
+- Remove superfluous assertion ([#304](https://github.com/foundry-rs/compilers/issues/304))
+- [flatten] Sort by loc path and loc start ([#302](https://github.com/foundry-rs/compilers/issues/302))
+
+### Dependencies
+
+- Bump 0.19.6 ([#337](https://github.com/foundry-rs/compilers/issues/337))
+- Bump version number in README ([#336](https://github.com/foundry-rs/compilers/issues/336))
+- [`ci`] Pin deps in workflow and add `dependabot` to update them weekly ([#321](https://github.com/foundry-rs/compilers/issues/321))
+- [deps] Bump solar ([#315](https://github.com/foundry-rs/compilers/issues/315))
+- [deps] Switch to solar meta crate ([#307](https://github.com/foundry-rs/compilers/issues/307))
+- [deps] Bump to 0.18.3 ([#303](https://github.com/foundry-rs/compilers/issues/303))
+- Update deps + fix clippy ([#297](https://github.com/foundry-rs/compilers/issues/297))
+
+### Features
+
+- Add `SourceParser` ([#300](https://github.com/foundry-rs/compilers/issues/300))
+
+### Miscellaneous Tasks
+
+- Release 0.19.6 ([#338](https://github.com/foundry-rs/compilers/issues/338))
+- Make clippy happy ([#334](https://github.com/foundry-rs/compilers/issues/334))
+- [`ci`] Merge in `codeql.yml` and mark as requirement for ci-success ([#331](https://github.com/foundry-rs/compilers/issues/331))
+- Release 0.19.5 ([#330](https://github.com/foundry-rs/compilers/issues/330))
+- Release 0.19.4 ([#328](https://github.com/foundry-rs/compilers/issues/328))
+- Remove feature(doc_auto_cfg) ([#327](https://github.com/foundry-rs/compilers/issues/327))
+- Release 0.19.3 ([#325](https://github.com/foundry-rs/compilers/issues/325))
+- [`ci`] Rescope permissions according to principle of least privilege ([#323](https://github.com/foundry-rs/compilers/issues/323))
+- [`ci`] Harden workflow by setting default permission to read only ([#320](https://github.com/foundry-rs/compilers/issues/320))
+- [`ci`] Add CodeQL ([#319](https://github.com/foundry-rs/compilers/issues/319))
+- Release 0.19.2 ([#317](https://github.com/foundry-rs/compilers/issues/317))
+- [`ci`] Add `ci-success` step so we can make this a condition for merging ([#316](https://github.com/foundry-rs/compilers/issues/316))
+- Release 0.19.1 ([#313](https://github.com/foundry-rs/compilers/issues/313))
+- Use FnMut instead of FnOnce + Copy ([#310](https://github.com/foundry-rs/compilers/issues/310))
+- Release 0.19.0 ([#306](https://github.com/foundry-rs/compilers/issues/306))
+- Release 0.18.4 ([#305](https://github.com/foundry-rs/compilers/issues/305))
+- Use svm instead of manual svm dir logic ([#301](https://github.com/foundry-rs/compilers/issues/301))
+- Add @0xrusowsky to `CODEOWNERS` ([#299](https://github.com/foundry-rs/compilers/issues/299))
+- Update `CODEOWNERS` to improve visibility ([#298](https://github.com/foundry-rs/compilers/issues/298))
+
+### Performance
+
+- Improve linking implementation ([#324](https://github.com/foundry-rs/compilers/issues/324))
+- Parallelize Remapping::get_many ([#314](https://github.com/foundry-rs/compilers/issues/314))
+
+### Refactor
+
+- Cache/is_dirty impls ([#311](https://github.com/foundry-rs/compilers/issues/311))
+
 ## [0.18.2](https://github.com/foundry-rs/compilers/releases/tag/v0.18.2) - 2025-08-01
 
 ### Bug Fixes
 
 - Allow single sol file remappings ([#295](https://github.com/foundry-rs/compilers/issues/295))
+
+### Miscellaneous Tasks
+
+- Release 0.18.2
 
 ## [0.18.1](https://github.com/foundry-rs/compilers/releases/tag/v0.18.1) - 2025-07-31
 
